@@ -1,0 +1,157 @@
+{
+	"info": {
+		"_postman_id": "c154cf01-e15c-4ea6-bbdc-1339ad415551",
+		"name": "医院系统",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17057091"
+	},
+	"item": [
+		{
+			"name": "登录",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"123456\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/htst/users/login",
+					"protocol": "http",
+					"host": [
+						"127.0.0.1",
+						"8080"
+					],
+					"path": [
+						"htst",
+						"users",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "获取用户列表",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8080/htst/users/list",
+					"protocol": "http",
+					"host": [
+						"127.0.0.1",
+						"8080"
+					],
+					"path": [
+						"htst",
+						"users",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "添加用户",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user\",\n    \"password\": \"123456\",\n    \"roles\": \"admin\",\n    \"status\": 1,\n    \"description\": \"注册新用户\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/htst/users/create",
+					"protocol": "http",
+					"host": [
+						"127.0.0.1",
+						"8080"
+					],
+					"path": [
+						"htst",
+						"users",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "添加内容",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/jiehu/Downloads/发票1查验.pdf"
+						},
+						{
+							"key": "title",
+							"value": "发票查验系统3",
+							"type": "text"
+						},
+						{
+							"key": "type",
+							"value": "11",
+							"description": "子模块编号类型",
+							"type": "text"
+						},
+						{
+							"key": "core_description",
+							"value": "核心说明",
+							"type": "text"
+						},
+						{
+							"key": "permission_note",
+							"value": "权限",
+							"type": "text"
+						},
+						{
+							"key": "remark",
+							"value": "备注",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/htst/info/add",
+					"protocol": "http",
+					"host": [
+						"127.0.0.1",
+						"8080"
+					],
+					"path": [
+						"htst",
+						"info",
+						"add"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
