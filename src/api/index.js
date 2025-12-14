@@ -85,7 +85,7 @@ export const infoListApi = (params = {}) => {
 }
 
 // 增加信息API
-export const infoAddApi = (formData) => {
+export const infoAddApi = (formData, onProgress) => {
   return api.post('/info/add', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
@@ -96,6 +96,10 @@ export const infoAddApi = (formData) => {
       if (progressEvent.lengthComputable) {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         console.log('上传进度:', percentCompleted, '%');
+        // 调用外部传入的进度回调
+        if (onProgress) {
+          onProgress(percentCompleted);
+        }
       }
     }
   })

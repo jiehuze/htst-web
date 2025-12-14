@@ -229,6 +229,12 @@
           <div class="uploading-content">
             <div class="uploading-spinner">⏳</div>
             <div class="uploading-text">文件上传中，请稍候...</div>
+            <div class="upload-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
+              </div>
+              <div class="progress-text">{{ uploadProgress }}%</div>
+            </div>
             <div class="uploading-hint">文件较大时可能需要较长时间</div>
           </div>
         </div>
@@ -401,6 +407,8 @@ const handleUploadClick = () => {
 // 处理增加文件
 // 增加文件loading状态
 const isUploading = ref(false)
+// 上传进度
+const uploadProgress = ref(0)
 
 const handleAddFile = async () => {
   try {
@@ -429,8 +437,12 @@ const handleAddFile = async () => {
     formData.append('permission_note', addForm.value.permission_note)
     formData.append('remark', addForm.value.remark)
     
+    // 重置上传进度
+    uploadProgress.value = 0
     // 调用API上传文件
-    await infoAddApi(formData)
+    await infoAddApi(formData, (progress) => {
+      uploadProgress.value = progress
+    })
     
     // 关闭弹窗
     showAddDialog.value = false
@@ -1794,6 +1806,57 @@ const handleDeleteFile = async (file) => {
   font-size: 14px;
   color: #606266;
   line-height: 1.6;
+}
+
+/* 上传进度条 */
+.upload-progress {
+  margin: 20px 0;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* 进度条容器 */
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
+}
+
+/* 进度条填充 */
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-radius: 5px;
+  transition: width 0.3s ease-in-out;
+  box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
+}
+
+/* 进度文本 */
+.progress-text {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #409eff;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 加载图标 */
