@@ -72,7 +72,7 @@
             <th>权限说明</th>
             <th>格式</th>
             <th>大小</th>
-            <th>访问量</th>
+            <th v-if="isAdmin">访问量</th>
             <th>备注</th>
             <th>操作</th>
           </tr>
@@ -97,7 +97,7 @@
               </span>
             </td>
             <td>{{ formatSize(file.size) }}</td>
-            <td>{{ file.count || 0 }}</td>
+            <td v-if="isAdmin">{{ file.count || 0 }}</td>
             <td>{{ file.remark }}</td>
             <td>
               <!-- MP4格式：显示播放和删除按钮（管理员） -->
@@ -162,7 +162,7 @@
             </td>
           </tr>
           <tr v-if="fileList.length === 0">
-            <td colspan="9" class="no-data">暂无数据</td>
+            <td :colspan="isAdmin ? 9 : 8" class="no-data">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -380,6 +380,14 @@ const currentMenuName = computed(() => {
 const handleFileChange = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // 检查文件大小，限制为1G
+    const maxSize = 1024 * 1024 * 1024 // 1G
+    if (file.size > maxSize) {
+      ElMessage.error('文件大小不能超过1G')
+      // 清空选择的文件
+      event.target.value = ''
+      return
+    }
     selectedFile.value = file
   }
 }

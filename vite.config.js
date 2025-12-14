@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // 将所有以/htst开头的请求代理到后端服务器
       '/htst': {
-        target: 'http://localhost:8080',
+        target: 'http://htst.mingdetec.com:9811',
         changeOrigin: true,
         secure: false
       },

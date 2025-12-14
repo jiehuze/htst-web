@@ -4,7 +4,7 @@ import axios from 'axios'
 // 创建axios实例
 const api = axios.create({
   baseURL: '/htst', // 使用相对路径，避免跨域问题
-  timeout: 10000,
+  timeout: 600000, // 延长超时时间到10分钟，支持大文件上传
   headers: {
     'Content-Type': 'application/json'
   },
@@ -89,6 +89,14 @@ export const infoAddApi = (formData) => {
   return api.post('/info/add', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
+    },
+    timeout: 600000, // 单独为文件上传设置10分钟超时
+    onUploadProgress: (progressEvent) => {
+      // 添加上传进度回调，便于前端处理进度显示
+      if (progressEvent.lengthComputable) {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        console.log('上传进度:', percentCompleted, '%');
+      }
     }
   })
 }
