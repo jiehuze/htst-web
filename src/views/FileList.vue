@@ -238,6 +238,14 @@
             <div class="uploading-hint">文件较大时可能需要较长时间</div>
           </div>
         </div>
+        
+        <!-- MD5计算中遮罩 -->
+        <div v-if="isCalculatingMD5" class="md5-loading-overlay">
+          <div class="md5-loading-content">
+            <div class="md5-loading-spinner"></div>
+            <div class="md5-loading-text">正在加载文件 {{ calculatingFileName }}，请稍候...</div>
+          </div>
+        </div>
         <form @submit.prevent="handleAddFile" class="add-file-form">
           <div class="form-item">
             <label for="addTitle">名称</label>
@@ -321,6 +329,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { infoListApi, infoDeleteApi, infoClickApi, infoAddApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import SparkMD5 from 'spark-md5'
 
 const router = useRouter()
 const route = useRoute()
@@ -350,7 +359,8 @@ const addForm = ref({
   title: '',
   core_description: '',
   permission_note: '',
-  remark: ''
+  remark: '',
+  md5: ''
 })
 
 // 文件输入框ref
@@ -382,8 +392,28 @@ const currentMenuName = computed(() => {
   return ''
 })
 
+// 计算文件MD5值（使用SparkMD5库，确保生成正确的MD5值）
+const calculateFileMD5 = async (file) => {
+  try {
+    // 读取文件为ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer()
+    
+    // 使用SparkMD5计算MD5值
+    const md5 = SparkMD5.ArrayBuffer.hash(arrayBuffer)
+    
+    // 将MD5值打印到日志中
+    console.log(`文件 ${file.name} 的MD5值: ${md5}`)
+    
+    return md5
+  } catch (error) {
+    console.error('计算文件MD5失败:', error)
+    ElMessage.error('加载文件失败，请重试')
+    return ''
+  }
+}
+
 // 处理文件选择
-const handleFileChange = (event) => {
+const handleFileChange = async (event) => {
   const file = event.target.files[0]
   if (file) {
     // 检查文件大小，限制为1G
@@ -394,7 +424,27 @@ const handleFileChange = (event) => {
       event.target.value = ''
       return
     }
-    selectedFile.value = file
+    
+    // 设置MD5计算loading状态
+    isCalculatingMD5.value = true
+    calculatingFileName.value = file.name
+    
+    // 计算文件MD5
+    const md5 = await calculateFileMD5(file)
+    
+    // 清除MD5计算loading状态
+    isCalculatingMD5.value = false
+    calculatingFileName.value = ''
+    
+    if (md5) {
+      addForm.value.md5 = md5
+      selectedFile.value = file
+      ElMessage.success('加载文件成功')
+    } else {
+      // 清空选择的文件
+      event.target.value = ''
+      selectedFile.value = null
+    }
   }
 }
 
@@ -409,6 +459,10 @@ const handleUploadClick = () => {
 const isUploading = ref(false)
 // 上传进度
 const uploadProgress = ref(0)
+// MD5计算loading状态
+const isCalculatingMD5 = ref(false)
+// 当前计算MD5的文件名
+const calculatingFileName = ref('')
 
 const handleAddFile = async () => {
   try {
@@ -436,6 +490,7 @@ const handleAddFile = async () => {
     formData.append('core_description', addForm.value.core_description)
     formData.append('permission_note', addForm.value.permission_note)
     formData.append('remark', addForm.value.remark)
+    formData.append('md5', addForm.value.md5)
     
     // 重置上传进度
     uploadProgress.value = 0
@@ -452,7 +507,8 @@ const handleAddFile = async () => {
       title: '',
       core_description: '',
       permission_note: '',
-      remark: ''
+      remark: '',
+      md5: ''
     }
     selectedFile.value = null
     
@@ -1806,6 +1862,122 @@ const handleDeleteFile = async (file) => {
   font-size: 14px;
   color: #606266;
   line-height: 1.6;
+}
+
+/* MD5计算中遮罩 */
+.md5-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(102, 177, 255, 0.1) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 15;
+  border-radius: 20px;
+  backdrop-filter: blur(15px);
+  animation: fadeIn 0.3s ease;
+  box-shadow: inset 0 0 20px rgba(64, 158, 255, 0.05);
+}
+
+/* MD5计算中内容 */
+.md5-loading-content {
+  text-align: center;
+  padding: 40px 50px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(64, 158, 255, 0.25);
+  max-width: 400px;
+  border: 2px solid rgba(64, 158, 255, 0.2);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+/* MD5计算中内容悬停效果 */
+.md5-loading-content:hover {
+  box-shadow: 0 25px 75px rgba(64, 158, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+/* 现代旋转动画 */
+.md5-loading-spinner {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 25px;
+  border: 4px solid rgba(64, 158, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #409eff;
+  animation: spin 1s linear infinite;
+  position: relative;
+  box-shadow: 0 0 20px rgba(64, 158, 255, 0.3);
+}
+
+/* 增强旋转效果 */
+.md5-loading-spinner::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 3px solid transparent;
+  border-top-color: #66b1ff;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+/* 增强旋转效果 */
+.md5-loading-spinner::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  border: 2px solid transparent;
+  border-top-color: #91caff;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+}
+
+/* MD5计算中文本 */
+.md5-loading-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.5;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: textPulse 2s ease-in-out infinite;
+}
+
+/* 文本脉动效果 */
+@keyframes textPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 上传进度条 */
