@@ -115,4 +115,14 @@ export const infoClickApi = (id) => {
   return api.get(`/info/click/${id}`)
 }
 
+// 检查title是否重名API
+export const checkTitleExistsApi = (title) => {
+  return api.get(`/info/existsByTitle`, { params: { title } })
+}
+
+// 检查md5是否存在API
+export const checkMd5ExistsApi = (md5) => {
+  return api.get(`/info/existsByMd5`, { params: { md5 } })
+}
+
 export default api

@@ -255,7 +255,11 @@
               v-model="addForm.title" 
               required
               placeholder="请输入名称"
+              @blur="handleTitleBlur"
             >
+            <div class="form-hint" v-if="titleExists" :class="{ 'error': titleExists }">
+              重复的名字，重新输入
+            </div>
           </div>
         
           <div class="form-item">
@@ -266,6 +270,7 @@
               required
               placeholder="请输入核心说明"
               rows="3"
+              :disabled="!addForm.title.trim() || titleExists"
             ></textarea>
           </div>
           <div class="form-item">
@@ -276,6 +281,7 @@
               v-model="addForm.permission_note" 
               required
               placeholder="请输入权限"
+              :disabled="!addForm.title.trim() || titleExists"
             >
           </div>
           <div class="form-item">
@@ -285,12 +291,13 @@
               id="addRemark" 
               v-model="addForm.remark" 
               placeholder="请输入备注"
+              :disabled="!addForm.title.trim() || titleExists"
             >
           </div>
           <div class="form-item">
             <label for="addFile">文件</label>
             <div class="file-upload">
-              <div class="file-upload-area" @click="handleUploadClick">
+              <div class="file-upload-area" @click="handleUploadClick" :style="{ cursor: (!addForm.title.trim() || titleExists) ? 'not-allowed' : 'pointer', opacity: (!addForm.title.trim() || titleExists) ? 0.6 : 1 }">
                 <div class="upload-icon">☁️</div>
                 <div class="upload-text">点击上传文件</div>
                 <div class="upload-hint">支持PDF、MP4、PNG、JPG、JPEG、GIF格式</div>
@@ -302,17 +309,18 @@
                 required
                 accept=".pdf,.mp4,.png,.jpg,.jpeg,.gif"
                 style="display: none;"
+                :disabled="!addForm.title.trim() || titleExists"
               >
               <div class="file-name" v-if="selectedFile">
                 <span class="file-icon">📄</span>
                 <span class="file-text">{{ selectedFile.name }}</span>
-                <button class="remove-file" @click.stop="selectedFile = null">×</button>
+                <button class="remove-file" @click.stop="selectedFile = null" :disabled="!addForm.title.trim() || titleExists">×</button>
               </div>
             </div>
           </div>
           <div class="form-actions">
             <button type="button" class="cancel-btn" @click="showAddDialog = false" :disabled="isUploading">取消</button>
-            <button type="submit" class="submit-btn" :disabled="isUploading">
+            <button type="submit" class="submit-btn" :disabled="isUploading || !addForm.title.trim() || titleExists">
               <span v-if="isUploading" class="loading-icon">⏳</span>
               <span v-else>提交</span>
             </button>
@@ -327,7 +335,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { infoListApi, infoDeleteApi, infoClickApi, infoAddApi } from '../api'
+import { infoListApi, infoDeleteApi, infoClickApi, infoAddApi, checkTitleExistsApi, checkMd5ExistsApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import SparkMD5 from 'spark-md5'
 
@@ -362,6 +370,12 @@ const addForm = ref({
   remark: '',
   md5: ''
 })
+
+// title是否重名标记
+const titleExists = ref(false)
+
+// 文件是否已存在于服务器标记
+const fileExistsOnServer = ref(false)
 
 // 文件输入框ref
 const fileInput = ref(null)
@@ -439,17 +453,34 @@ const handleFileChange = async (event) => {
     if (md5) {
       addForm.value.md5 = md5
       selectedFile.value = file
-      ElMessage.success('加载文件成功')
+      
+      // 检查文件是否已存在于服务器
+      try {
+        const exists = await checkMd5ExistsApi(md5)
+        fileExistsOnServer.value = exists
+        // 打印日志，不显示不同提示
+        console.log('文件MD5检查结果:', exists ? '服务器已存在该文件，无需重新上传' : '服务器不存在该文件，需要上传')
+        ElMessage.success('加载文件成功')
+      } catch (error) {
+        console.error('检查文件是否存在失败:', error)
+        fileExistsOnServer.value = false
+        ElMessage.success('加载文件成功')
+      }
     } else {
       // 清空选择的文件
       event.target.value = ''
       selectedFile.value = null
+      fileExistsOnServer.value = false
     }
   }
 }
 
 // 处理上传点击
 const handleUploadClick = () => {
+  // 如果title为空或重名，不允许上传文件
+  if (!addForm.value.title.trim() || titleExists.value) {
+    return
+  }
   // 使用Vue ref触发文件选择对话框
   fileInput.value.click()
 }
@@ -472,6 +503,12 @@ const handleAddFile = async () => {
       return
     }
     
+    // 检查title是否重名（已在输入时检查）
+    if (titleExists.value) {
+      ElMessage.error('标题已存在，请重新输入')
+      return
+    }
+    
     // 获取当前菜单的type值
     const type = getCurrentMenuType()
     if (!type) {
@@ -484,7 +521,10 @@ const handleAddFile = async () => {
     
     // 构建FormData对象
     const formData = new FormData()
-    formData.append('file', selectedFile.value)
+    // 如果服务器不存在该文件，则添加file字段
+    if (!fileExistsOnServer.value) {
+      formData.append('file', selectedFile.value)
+    }
     formData.append('title', addForm.value.title)
     formData.append('type', type) // 自动填入当前菜单的type值
     formData.append('core_description', addForm.value.core_description)
@@ -829,6 +869,33 @@ const downloadFile = async (file) => {
     document.body.removeChild(link)
   }
 }
+
+// 处理title输入框失去焦点事件
+const handleTitleBlur = async () => {
+  await checkTitleExists()
+}
+
+// 检查title是否重名
+const checkTitleExists = async () => {
+  if (!addForm.value.title.trim()) {
+    return
+  }
+  
+  try {
+    const isExists = await checkTitleExistsApi(addForm.value.title)
+    if (isExists) {
+      ElMessage.error('标题已存在，请重新输入')
+      // 可以添加一个标记，用于后续表单提交时检查
+      titleExists.value = true
+    } else {
+      titleExists.value = false
+    }
+  } catch (error) {
+    console.error('检查标题是否存在失败:', error)
+  }
+}
+
+// 移除title变化监听，只在焦点离开时触发检查
 
 // 处理文件删除
 const handleDeleteFile = async (file) => {
@@ -2085,6 +2152,23 @@ button:disabled:hover {
   color: #409eff;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(64, 158, 255, 0.2);
+}
+
+/* 表单提示样式 */
+.form-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* 错误提示样式 */
+.form-hint.error {
+  color: #f56c6c;
+  background: rgba(245, 108, 108, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #f56c6c;
 }
 
 .cancel-btn:active:not(:disabled) {
