@@ -128,6 +128,11 @@
         <div class="content-body">
           <router-view />
         </div>
+        
+        <!-- 页脚信息 -->
+        <div class="content-footer">
+          <div class="unit-info">中国人民解放军联勤保障部队第981医院</div>
+        </div>
       </section>
     </div>
   </div>
@@ -333,34 +338,52 @@ onBeforeUnmount(() => {
 .contact-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 14px;
-  color: #606266;
-  background-color: #f0f2f5;
-  padding: 6px 15px;
-  border-radius: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: #303133;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contact-item:hover {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: #409eff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
 }
 
 .contact-icon {
   font-size: 16px;
   color: #409eff;
-  margin-right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
 }
 
 .contact-divider {
-  color: #c0c4cc;
-  font-size: 16px;
+  color: #e4e7ed;
+  font-size: 12px;
   font-weight: 300;
-  padding: 0 2px;
+  padding: 0;
+  width: 1px;
+  height: 20px;
+  background: #e4e7ed;
+  margin: 0 2px;
 }
 
 /* 响应式设计，在小屏幕上隐藏联系方式 */
@@ -751,11 +774,85 @@ onBeforeUnmount(() => {
   padding: 20px;
   overflow-y: auto;
   background-color: white;
-  margin: 20px;
+  margin: 20px 20px 8px 20px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   width: calc(100% - 40px);
   max-width: none;
+}
+
+/* 页脚信息 */
+.content-footer {
+  padding: 16px 20px;
+  text-align: center;
+  font-size: 15px;
+  color: #475569;
+  border-top: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  margin: 0 20px 20px 20px;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: calc(100% - 40px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 页脚装饰效果 */
+.content-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 2px 2px;
+}
+
+/* 单位信息样式 */
+.unit-info {
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 悬停效果 */
+.content-footer:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.content-footer:hover .unit-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .content-footer {
+    margin: 0 12px 12px 12px;
+    width: calc(100% - 24px);
+    padding: 20px 16px;
+  }
+  
+  .unit-info {
+    font-size: 14px;
+    padding: 6px 16px;
+  }
 }
 
 /* 默认视图样式 */
