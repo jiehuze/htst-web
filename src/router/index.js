@@ -5,6 +5,7 @@ import IndexView from '../views/IndexView.vue'
 import SystemManage from '../views/SystemManage.vue'
 import FileList from '../views/FileList.vue'
 import VideoPlayer from '../views/VideoPlayer.vue'
+import ExpertSupport from '../views/ExpertSupport.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,12 +51,7 @@ const router = createRouter({
           component: FileList,
           meta: { title: '方法论指导模块' }
         },
-        {
-          path: 'process/experts',
-          name: 'process-experts',
-          component: FileList,
-          meta: { title: '专家支持模块' }
-        },
+        {          path: 'process/experts',          name: 'process-experts',          component: ExpertSupport,          meta: { title: '专家支持' }        },
         {
           path: 'process/team',
           name: 'process-team',

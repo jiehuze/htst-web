@@ -125,4 +125,23 @@ export const checkMd5ExistsApi = (md5) => {
   return api.get(`/info/existsByMd5`, { params: { md5 } })
 }
 
+// 获取专家列表API
+export const getExpertsListApi = () => {
+  return api.get('/doctor/list')
+}
+
+// 添加专家API
+export const addDoctorApi = (formData) => {
+  return api.post('/doctor/add', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 删除专家API
+export const deleteDoctorApi = (id) => {
+  return api.delete(`/doctor/${id}`)
+}
+
 export default api
