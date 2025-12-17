@@ -82,7 +82,7 @@
   class="expert-detail-panel"
 >
   <div class="detail-section">
-    <h4 class="detail-title">个人简介</h4>
+    <h4 class="detail-title">专家介绍</h4>
     <p class="detail-content">{{ expert.detailedBio || expert.bio }}</p>
   </div>
           
@@ -99,7 +99,7 @@
             </div>
           </div>
           
-          <div class="detail-section">
+          <div v-if="expert.achievements && expert.achievements.length > 0" class="detail-section">
             <h4 class="detail-title">科研成果</h4>
             <ul class="achievements-list">
               <li v-for="(achievement, index) in expert.achievements" :key="index" class="achievement-item">
@@ -237,9 +237,9 @@
               <label for="expertAchievements" class="form-label">科研成果</label>
               <textarea 
                 id="expertAchievements" 
-                v-model="addForm.research_achievements" 
+                v-model="addForm.research_achievements"
                 required
-                placeholder="请输入科研成果，用换行分隔"
+                placeholder='请输入科研成果，用换行分割，可以直接填"无"，将不显示科研成果'
                 rows="5"
                 class="form-textarea"
               ></textarea>
@@ -316,18 +316,26 @@ const fetchExperts = async () => {
   try {
     const data = await getExpertsListApi()
     // 将接口返回的数据转换为组件需要的格式
-experts.value = data.map(expert => ({
-  id: expert.id,
-  name: expert.name,
-  avatarUrl: expert.avatar_url ? `/api/files/${expert.avatar_url}` : '',
-  title: expert.title,
-  department: expert.department,
-  education: expert.degree,
-  bio: expert.introduction,
-  detailedBio: expert.detailed_description,
-  fields: expert.specialties.split(',').map(field => field.trim()),
-  achievements: expert.research_achievements.split('\n').filter(item => item.trim())
-}))
+experts.value = data.map(expert => {
+  // 处理科研成果，如果为"无"或只有空行，则返回空数组
+  let achievements = [];
+  if (expert.research_achievements && expert.research_achievements !== '无') {
+    achievements = expert.research_achievements.split('\n').filter(item => item.trim());
+  }
+  
+  return {
+    id: expert.id,
+    name: expert.name,
+    avatarUrl: expert.avatar_url ? `/api/files/${expert.avatar_url}` : '',
+    title: expert.title,
+    department: expert.department,
+    education: expert.degree,
+    bio: expert.introduction,
+    detailedBio: expert.detailed_description,
+    fields: expert.specialties.split(',').map(field => field.trim()),
+    achievements: achievements
+  };
+})
   } catch (error) {
     console.error('获取专家列表失败:', error)
     ElMessage.error('获取专家列表失败')
@@ -367,7 +375,7 @@ const resetForm = () => {
     introduction: '',
     detailed_description: '',
     specialties: '',
-    research_achievements: ''
+    research_achievements: '无'
   }
   selectedFile.value = null
   if (fileInput.value) {
@@ -415,7 +423,8 @@ const handleAddExpert = async () => {
     formData.append('introduction', addForm.value.introduction)
     formData.append('detailed_description', addForm.value.detailed_description)
     formData.append('specialties', addForm.value.specialties)
-    formData.append('research_achievements', addForm.value.research_achievements)
+    // 如果科研成果为空，默认设置为"无"
+    formData.append('research_achievements', addForm.value.research_achievements || '无')
     
     // 添加文件
     if (selectedFile.value) {
@@ -988,8 +997,8 @@ const handleDeleteExpert = async (id, name) => {
 /* 专家网格布局 */
 .experts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
   justify-content: center;
 }
 
