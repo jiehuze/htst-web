@@ -37,45 +37,45 @@ const router = createRouter({
           path: 'process/policy',
           name: 'process-policy',
           component: FileList,
-          meta: { title: '政策与流程模块' }
+          meta: { title: '政策与流程' }
         },
         {
           path: 'process/templates',
           name: 'process-templates',
           component: FileList,
-          meta: { title: '工具模板库模块' }
+          meta: { title: '工具模板库' }
         },
         {
           path: 'process/methodology',
           name: 'process-methodology',
           component: FileList,
-          meta: { title: '方法论指导模块' }
+          meta: { title: '方法论指导' }
         },
         {          path: 'process/experts',          name: 'process-experts',          component: ExpertSupport,          meta: { title: '专家支持' }        },
         {
           path: 'process/team',
           name: 'process-team',
           component: FileList,
-          meta: { title: '团队职责模块' }
+          meta: { title: '团队职责' }
         },
         {
           path: 'process/training',
           name: 'process-training',
           component: FileList,
-          meta: { title: '教学培训模块' }
+          meta: { title: '教学培训' }
         },
         // 信息同步相关路由 - 所有子菜单都使用FileList组件
         {
           path: 'info/projects',
           name: 'info-projects',
           component: FileList,
-          meta: { title: '课题立项动态子板块' }
+          meta: { title: '课题立项动态' }
         },
         {
           path: 'info/academic',
           name: 'info-academic',
           component: FileList,
-          meta: { title: '学术交流动态子板块' }
+          meta: { title: '学术交流动态' }
         },
         // 系统管理相关路由
         {
