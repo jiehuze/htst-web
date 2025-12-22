@@ -6,6 +6,7 @@ import SystemManage from '../views/SystemManage.vue'
 import FileList from '../views/FileList.vue'
 import VideoPlayer from '../views/VideoPlayer.vue'
 import ExpertSupport from '../views/ExpertSupport.vue'
+import Contact from '../views/Contact.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -82,6 +83,12 @@ const router = createRouter({
           path: 'system',
           name: 'system',
           component: SystemManage
+        },
+        {
+          path: 'system/contact',
+          name: 'contact',
+          component: Contact,
+          meta: { title: '联系方式' }
         }
       ]
     },

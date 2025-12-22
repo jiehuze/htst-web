@@ -3,9 +3,9 @@
     <div class="login-box">
       <!-- Logo区域 -->
       <div class="login-logo">
-        <img src="/src/assets/htst.png" alt="科研管理平台" class="logo-image">
+        <img src="/src/assets/htst.png" alt="护理科研管理平台" class="logo-image">
       </div>
-      <h1>科研管理平台</h1>
+      <h1>护理科研管理平台</h1>
       <p class="login-subtitle">中国人民解放军联勤保障部队第981医院</p>
       <form @submit.prevent="handleLogin">
         <div class="form-item">
@@ -30,15 +30,46 @@
         </div>
         <button type="submit" class="login-btn">登录</button>
       </form>
+      
+      <!-- 联系方式区域 -->
+      <div class="contact-info">
+        <div class="contact-header" @click="toggleContact">
+          <h3 class="contact-title">联系方式</h3>
+          <span class="contact-toggle" :class="{ 'rotate': !isContactCollapsed }">
+            {{ isContactCollapsed ? '▼' : '▲' }}
+          </span>
+        </div>
+        <div 
+          class="contact-details" 
+          v-show="!isContactCollapsed"
+          :class="{ 'expanded': !isContactCollapsed }"
+        >
+          <div class="contact-item">
+            <span class="contact-icon">📞</span>
+            <span class="contact-label">电话：</span>
+            <span class="contact-value">{{ contactInfo?.phone || 'XXX-XXXXXXX' }}</span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-icon">✉️</span>
+            <span class="contact-label">邮箱：</span>
+            <span class="contact-value">{{ contactInfo?.email || 'example@xxx.com' }}</span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-icon">🏢</span>
+            <span class="contact-label">部门：</span>
+            <span class="contact-value">{{ contactInfo?.name || '科教办' }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { loginApi } from '../api'
+import { loginApi, getContactApi } from '../api'
 import Toast from '../utils/toast'
 
 const router = useRouter()
@@ -47,6 +78,20 @@ const form = ref({
   username: '',
   password: ''
 })
+// 联系方式数据
+const contactInfo = ref(null)
+// 折叠状态，默认折叠
+const isContactCollapsed = ref(true)
+
+// 获取联系方式
+const fetchContact = async () => {
+  try {
+    const data = await getContactApi()
+    contactInfo.value = data
+  } catch (error) {
+    console.error('获取联系方式失败:', error)
+  }
+}
 
 const handleLogin = async () => {
   try {
@@ -60,11 +105,21 @@ const handleLogin = async () => {
     // 跳转到首页
     router.push({ name: 'index' })
   } catch (error) {
-    // 登录失败，显示错误信息
+    // 登录失败，只打印日志，不显示错误信息
+    // 错误信息由响应拦截器统一处理
     console.error('登录失败:', error)
-    Toast.show('登录失败，请检查用户名和密码')
   }
 }
+
+// 切换折叠状态
+const toggleContact = () => {
+  isContactCollapsed.value = !isContactCollapsed.value
+}
+
+// 页面加载时获取联系方式
+onMounted(() => {
+  fetchContact()
+})
 </script>
 
 <style scoped>
@@ -289,5 +344,137 @@ const handleLogin = async () => {
   50% {
     transform: scale(1.05);
   }
+}
+
+/* 联系方式区域样式 */
+.contact-info {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(64, 158, 255, 0.2);
+  animation: fadeIn 0.4s ease 0.7s both;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* 联系方式标题栏 */
+.contact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+}
+
+.contact-header:hover {
+  background: rgba(64, 158, 255, 0.08);
+}
+
+.contact-title {
+  margin: 0;
+  color: #409eff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 折叠/展开图标 */
+.contact-toggle {
+  font-size: 12px;
+  color: #409eff;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  display: inline-block;
+  width: 20px;
+  text-align: center;
+}
+
+.contact-toggle.rotate {
+  transform: rotate(180deg);
+}
+
+/* 联系方式详情区域 */
+.contact-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  padding: 0 16px;
+  transform: translateY(-10px);
+}
+
+.contact-details.expanded {
+  max-height: 200px;
+  opacity: 1;
+  padding: 16px;
+  transform: translateY(0);
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease both;
+}
+
+.contact-item:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.9) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 0 0 3px rgba(64, 158, 255, 0.1);
+  border-color: rgba(64, 158, 255, 0.3);
+}
+
+/* 为每个联系项添加延迟动画 */
+.contact-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.contact-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.contact-item:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.contact-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.contact-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  min-width: 50px;
+}
+
+.contact-value {
+  font-size: 14px;
+  color: #303133;
+  flex: 1;
+  font-weight: 500;
 }
 </style>

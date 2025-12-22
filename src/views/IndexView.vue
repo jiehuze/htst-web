@@ -2,7 +2,7 @@
   <div class="index-view">
     <!-- 欢迎横幅 -->
     <div class="welcome-banner">
-      <h1 class="welcome-title">🎉 欢迎使用科研管理平台</h1>
+      <h1 class="welcome-title">🎉 欢迎使用护理科研管理平台</h1>
       <p class="welcome-subtitle">中国人民解放军联勤保障部队第981医院</p>
     </div>
     

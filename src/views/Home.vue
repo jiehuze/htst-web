@@ -8,23 +8,23 @@
           alt="中国人民解放军联勤保障部队第九八一医院" 
           class="system-logo"
         >
-        <div class="system-name">科研管理平台</div>
+        <div class="system-name">护理科研管理平台</div>
       </div>
       <div class="nav-right">
         <div class="contact-info">
           <div class="contact-item">
             <span class="contact-icon">📞</span>
-            <span>电话：XXX</span>
+            <span>电话：{{ contactInfo?.phone || 'XXX' }}</span>
           </div>
           <div class="contact-divider">|</div>
           <div class="contact-item">
             <span class="contact-icon">✉️</span>
-            <span>邮箱：XXX</span>
+            <span>邮箱：{{ contactInfo?.email || 'XXX' }}</span>
           </div>
           <div class="contact-divider">|</div>
           <div class="contact-item">
             <span class="contact-icon">🏢</span>
-            <span>科教办</span>
+            <span>{{ contactInfo?.name || '科教办' }}</span>
           </div>
         </div>
         <div class="user-info">
@@ -53,10 +53,95 @@
               </div>
             </div>
             <div class="menu-divider"></div>
+            <button class="dropdown-menu-item" @click="showChangePwdDialog = true; isUserMenuOpen = false">
+              <span class="dropdown-menu-icon">🔒</span>
+              <span class="dropdown-menu-text">修改密码</span>
+            </button>
             <button class="dropdown-menu-item logout-item" @click="handleLogout">
               <span class="dropdown-menu-icon">🚪</span>
               <span class="dropdown-menu-text">登出</span>
             </button>
+          </div>
+          
+          <!-- 修改密码对话框 -->
+          <div v-if="showChangePwdDialog" class="dialog-overlay">
+            <div class="dialog-content">
+              <div class="dialog-header">
+                <h3>修改密码</h3>
+                <button class="close-btn" @click="showChangePwdDialog = false">×</button>
+              </div>
+              <form @submit.prevent="handleChangePassword" class="change-pwd-form">
+                <div class="form-item">
+                  <label for="username">用户名</label>
+                  <input 
+                    type="text" 
+                    id="username" 
+                    v-model="changePwdForm.username" 
+                    readonly
+                    placeholder="用户名"
+                  >
+                </div>
+                <div class="form-item">
+                  <label for="oldPassword">原密码</label>
+                  <input 
+                    type="password" 
+                    id="oldPassword" 
+                    v-model="changePwdForm.oldPassword" 
+                    required
+                    placeholder="请输入原密码"
+                    @blur="validateOldPassword"
+                  >
+                  <div v-if="oldPasswordValidating" class="validating-message">
+                    正在验证密码...
+                  </div>
+                  <div v-else-if="oldPasswordValidated && !oldPasswordIsValid" class="error-message">
+                    原密码不正确
+                  </div>
+                  <div v-else-if="oldPasswordValidated && oldPasswordIsValid" class="success-message">
+                    原密码正确
+                  </div>
+                </div>
+                <div class="form-item">
+                  <label for="newPassword">新密码</label>
+                  <input 
+                    type="password" 
+                    id="newPassword" 
+                    v-model="changePwdForm.newPassword" 
+                    required
+                    placeholder="请输入新密码"
+                    :disabled="!oldPasswordIsValid"
+                    :class="{ 'disabled-input': !oldPasswordIsValid }"
+                  >
+                  <div v-if="!oldPasswordIsValid" class="hint-message">
+                    请先验证原密码
+                  </div>
+                </div>
+                <div class="form-item">
+                  <label for="confirmPassword">确认新密码</label>
+                  <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    v-model="changePwdForm.confirmPassword" 
+                    required
+                    placeholder="请确认新密码"
+                    :disabled="!oldPasswordIsValid"
+                    :class="{ 'disabled-input': !oldPasswordIsValid }"
+                  >
+                  <div v-if="!oldPasswordIsValid" class="hint-message">
+                    请先验证原密码
+                  </div>
+                  <div v-else-if="changePwdForm.newPassword && changePwdForm.confirmPassword && changePwdForm.newPassword !== changePwdForm.confirmPassword" class="error-message">
+                    两次输入的密码不一致
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="cancel-btn" @click="showChangePwdDialog = false">取消</button>
+                  <button type="submit" class="submit-btn" :disabled="!oldPasswordIsValid || (changePwdForm.newPassword && changePwdForm.confirmPassword && changePwdForm.newPassword !== changePwdForm.confirmPassword)">
+                    保存
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +227,8 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { getContactApi, loginApi, updateUserApi } from '../api'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
@@ -151,6 +238,21 @@ const userStore = useUserStore()
 const expandedMenus = ref([1, 2, 3]) // 包含所有一级菜单的id
 // 用户菜单状态
 const isUserMenuOpen = ref(false) // 用户菜单展开状态
+// 联系方式数据
+const contactInfo = ref(null)
+// 修改密码对话框状态
+const showChangePwdDialog = ref(false)
+// 修改密码表单数据
+const changePwdForm = ref({
+  username: '',
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+// 原密码验证状态
+const oldPasswordValidating = ref(false)
+const oldPasswordValidated = ref(false)
+const oldPasswordIsValid = ref(false)
 
 // 动态过滤菜单列表，根据用户角色显示不同菜单
 const filteredMenuList = computed(() => {
@@ -200,6 +302,16 @@ const handleClickOutside = (event) => {
   const dropdownMenu = document.querySelector('.dropdown-menu')
   if (userProfile && dropdownMenu && !userProfile.contains(event.target) && !dropdownMenu.contains(event.target)) {
     isUserMenuOpen.value = false
+  }
+}
+
+// 获取联系方式
+const fetchContact = async () => {
+  try {
+    const data = await getContactApi()
+    contactInfo.value = data
+  } catch (error) {
+    console.error('获取联系方式失败:', error)
   }
 }
 
@@ -271,8 +383,100 @@ const handleLogout = () => {
   router.push({ name: 'login' })
 }
 
+// 监听修改密码对话框的显示状态，当显示时回显用户名
+watch(showChangePwdDialog, (newVal) => {
+  if (newVal) {
+    // 对话框显示时，将当前用户名填入表单
+    changePwdForm.value.username = userStore.userInfo?.username || '系统管理员'
+    // 重置其他表单字段
+    changePwdForm.value.oldPassword = ''
+    changePwdForm.value.newPassword = ''
+    changePwdForm.value.confirmPassword = ''
+    // 重置验证状态
+    oldPasswordValidating.value = false
+    oldPasswordValidated.value = false
+    oldPasswordIsValid.value = false
+  }
+})
+
+// 验证原密码
+const validateOldPassword = async () => {
+  // 检查原密码是否为空
+  if (!changePwdForm.value.oldPassword) {
+    oldPasswordValidating.value = false
+    oldPasswordValidated.value = false
+    oldPasswordIsValid.value = false
+    return
+  }
+  
+  // 设置验证中状态
+  oldPasswordValidating.value = true
+  oldPasswordValidated.value = false
+  oldPasswordIsValid.value = false
+  
+  try {
+    // 调用login接口验证原密码
+    await loginApi(changePwdForm.value.username, changePwdForm.value.oldPassword)
+    // 验证成功
+    oldPasswordValidating.value = false
+    oldPasswordValidated.value = true
+    oldPasswordIsValid.value = true
+  } catch (error) {
+    // 验证失败
+    oldPasswordValidating.value = false
+    oldPasswordValidated.value = true
+    oldPasswordIsValid.value = false
+  }
+}
+
+// 处理密码修改
+const handleChangePassword = async () => {
+  // 检查原密码是否验证通过
+  if (!oldPasswordValidated || !oldPasswordIsValid) {
+    // 如果没有验证过，先进行验证
+    if (!oldPasswordValidated) {
+      await validateOldPassword()
+    }
+    
+    // 验证失败，提示错误
+    if (!oldPasswordIsValid) {
+      ElMessage.error('请先输入正确的原密码')
+      return
+    }
+  }
+  
+  try {
+    // 构建密码修改请求参数
+    const requestData = {
+      username: changePwdForm.value.username,
+      password: changePwdForm.value.newPassword // 新密码
+    }
+    
+    console.log('修改密码请求:', requestData)
+    
+    // 调用updateUserApi修改密码
+    await updateUserApi(requestData)
+    
+    // 密码修改成功
+    ElMessage.success('密码修改成功')
+    
+    // 关闭对话框
+    showChangePwdDialog.value = false
+    
+    // 修改成功后自动登出，让用户重新登录
+    setTimeout(() => {
+      handleLogout()
+    }, 1500)
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('密码修改失败，请重试')
+  }
+}
+
 onMounted(() => {
   userStore.loadUserInfo()
+  // 获取联系方式数据
+  fetchContact()
   // 添加点击外部关闭菜单事件监听
   document.addEventListener('click', handleClickOutside)
 })
@@ -886,5 +1090,257 @@ onBeforeUnmount(() => {
   color: #303133;
   margin: 0;
   line-height: 1.5;
+}
+
+/* 修改密码对话框样式 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(59, 130, 246, 0.3) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.3s ease;
+}
+
+.dialog-content {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  position: relative;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(180deg) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.change-pwd-form {
+  padding: 24px 28px;
+}
+
+.form-item {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.form-item label {
+  display: block;
+  margin-bottom: 8px;
+  color: #303133;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.form-item input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  font-size: 15px;
+  box-sizing: border-box;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: white;
+  color: #303133;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-item input:hover {
+  border-color: #c6e2ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-item input:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.12), 0 4px 12px rgba(64, 158, 255, 0.15);
+  transform: translateY(-1px);
+  background-color: white;
+}
+
+.form-item input[readonly] {
+  background: rgba(245, 247, 250, 0.8);
+  color: #909399;
+  cursor: not-allowed;
+}
+
+.error-message, .validating-message, .success-message {
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.error-message {
+  color: #f56c6c;
+  background: rgba(245, 108, 108, 0.1);
+  border-left-color: #f56c6c;
+}
+
+.validating-message {
+  color: #909399;
+  background: rgba(144, 147, 153, 0.1);
+  border-left-color: #909399;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.success-message {
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
+  border-left-color: #67c23a;
+}
+
+.hint-message {
+  color: #909399;
+  background: rgba(144, 147, 153, 0.1);
+  border-left: 3px solid #909399;
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.disabled-input {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(245, 247, 250, 0.8) !important;
+  color: #c0c4cc !important;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.cancel-btn, .submit-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cancel-btn {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
+  color: #606266;
+  border: 2px solid #e4e7ed;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cancel-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.9) 100%);
+  border-color: #409eff;
+  color: #409eff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.35);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #66b1ff 0%, #8ccaff 100%);
+  box-shadow: 0 12px 32px rgba(64, 158, 255, 0.45);
+  transform: translateY(-2px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

@@ -1619,7 +1619,27 @@ const handleDeleteFile = async (file) => {
   animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(20px);
-  overflow: hidden;
+  position: relative;
+}
+
+/* 优化滚动条样式 */
+.dialog-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialog-content::-webkit-scrollbar-track {
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(64, 158, 255, 0.5);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(64, 158, 255, 0.8);
 }
 
 @keyframes slideIn {

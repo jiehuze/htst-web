@@ -22,6 +22,12 @@ export const useUserStore = defineStore('user', {
             id: 31,
             name: '用户管理',
             path: '/home/system'
+          },
+          {
+            id: 32,
+            name: '联系方式',
+            icon: '📞',
+            path: '/home/system/contact'
           }
         ]
       }

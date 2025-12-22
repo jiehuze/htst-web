@@ -144,4 +144,41 @@ export const deleteDoctorApi = (id) => {
   return api.delete(`/doctor/${id}`)
 }
 
+// 获取联系方式API
+export const getContactApi = async () => {
+  try {
+    // 使用默认axios实例，不使用拦截器，自定义处理响应
+    const response = await axios.get('/htst/contact/one')
+    const res = response.data
+    
+    // 自定义处理响应
+    if (res.code === 200) {
+      // 检查返回的数据是否为空
+      const data = res.data
+      // 如果data是空对象或null，返回null
+      const isEmptyObject = data && typeof data === 'object' && Object.keys(data).length === 0
+      return (data && !isEmptyObject) ? data : null
+    } else if (res.msg === '未找到联系人') {
+      // 未找到联系人，返回null，不显示错误
+      return null
+    } else {
+      // 其他错误，返回错误信息
+      throw new Error(res.msg || '操作失败')
+    }
+  } catch (error) {
+    console.error('获取联系方式失败:', error)
+    throw error
+  }
+}
+
+// 添加联系方式API
+export const addContactApi = (contactData) => {
+  return api.post('/contact/add', contactData)
+}
+
+// 更新联系方式API
+export const updateContactApi = (contactData) => {
+  return api.put('/contact/update', contactData)
+}
+
 export default api
